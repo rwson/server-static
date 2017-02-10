@@ -2,11 +2,15 @@
 
 静态文件服务器,类似于[live-server](),支持自定义ajax请求路径mock数据
 
+### 安装
+
+    npm install server-static -g
+
 可通过
 
     static-server --help
     
-命令查看帮助文档
+命令查看配置帮助文档
 
 
 ### 配置
@@ -56,3 +60,5 @@
     		}
     	]
     };
+    
+    
