@@ -1,12 +1,13 @@
 {
     "name": "server-static",
-    "version": "1.1.4-beta",
+    "version": "1.1.8-beta",
+    "preferGlobal": true,
     "description": "a static file server",
     "scripts": {
-        "postinstall": "cd ./"
+        "postinstall": "node ./index.js"
     },
     "bin": {
-        "static-server": "./bin/index.js"
+        "static-server": "./bin/index"
     },
     "keywords": [
         "static",
