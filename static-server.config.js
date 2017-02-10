@@ -30,6 +30,7 @@ module.exports = {
 			handler: function(req, res, next) {
 				console.log(req.body);
 				res.statusCode = 200;
+				res.setHeader("Content-Type", "application/json; charset=utf-8");
 				res.end(JSON.stringify({
 					tip: "请求内容",
 					res: req.body
