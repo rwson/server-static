@@ -6,14 +6,20 @@
 
     npm install server-static -g
 
-可通过
+安装完成可通过运行
 
     static-server --help
     
 命令查看配置帮助文档
 
+通过在项目目录下运行
 
-### 配置
+    static-server
+
+的方式启动本服务
+
+
+### 配置(如不指定,就用默认配置)
 
 可以通过在项目根目录下新建名为"static-server.config.js"的文件进行配置
 
