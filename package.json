@@ -1,14 +1,13 @@
 {
     "name": "server-static",
-    "version": "1.0.0",
+    "version": "1.1.4-beta",
     "description": "a static file server",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "postinstall": "npm link"
+        "postinstall": "cd ./"
     },
     "bin": {
-        "static-server": "./lib/index.js"
+        "static-server": "./bin/index.js"
     },
     "keywords": [
         "static",

@@ -19,7 +19,6 @@
 
     //  static-server.config.js
 
-
     module.exports = {
     	port: 4000,             //  监听端口,默认3000,当端口被占用时随机
     	"auto-refresh": true,   //  文件发生变化时自动刷新
