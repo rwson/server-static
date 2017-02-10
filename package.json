@@ -1,0 +1,30 @@
+{
+  "name": "static-server",
+  "version": "1.0.0",
+  "description": "a static file server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "static",
+    "file",
+    "server",
+    "hot-reolad"
+  ],
+  "author": "rwson",
+  "dependencies": {
+    "color-console": "0.0.1",
+    "connect": "^3.5.0",
+    "connect-route": "^0.1.5",
+    "console.table": "^0.8.0",
+    "detect-port": "^1.1.0",
+    "inject-html": "^1.0.1",
+    "minimist": "^1.2.0",
+    "node-watch": "^0.4.1",
+    "open": "0.0.5",
+    "serve-index": "^1.8.0",
+    "serve-static": "^1.11.2",
+    "socket.io": "^1.7.2"
+  }
+}
