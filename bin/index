@@ -66,8 +66,27 @@ var app = connect(),
             <!--injected by static-server-->
             <script src="http://cdn.bootcss.com/socket.io/1.7.2/socket.io.min.js"></script>
             <script type="text/javascript">
-                var socket = io.connect("/");
-                socket.on("refresh", function() {
+                var socket = io.connect("/"),
+                    doc = document,
+                    head = doc.getElementsByTagName("head")[0],
+                    links, cur, link, parent;
+                socket.on("refresh-css", function() {
+                    links = document.getElementsByTagName("link");
+                    for(var i = 0, len = links.length; i < len; i ++) {
+                        cur = links[i];
+                        parent = cur.parentNode;
+                        if (parent === null) {
+                            parent = head;
+                        }
+                        if (cur.rel === "stylesheet" && cur.href.length) {
+                            link = doc.createElement("link");
+                            link.rel = "stylesheet";
+                            link.href = cur.href + "?v=" + (new Date()).getTime();
+                            parent.replaceChild(link, cur);
+                        }
+                    }
+                });
+                socket.on("refresh-page", function() {
                     location.reload();
                 });
             </script>
@@ -212,8 +231,13 @@ function statrServer(cfg) {
         if (cfg.watches) {
             watch(cfg.watches).on("change", function (file) {
                 if (cfg["auto-refresh"]) {
-                    colorConsole.green(`${file}发生变化, 刷新页面...`);
-                    io.emit("refresh");
+                    if (/\.css$/.test(file)) {
+                        colorConsole.green(`${file}发生变化, 刷新样式...`);
+                        io.emit("refresh-css");
+                    } else {
+                        colorConsole.green(`${file}发生变化, 刷新页面...`);
+                        io.emit("refresh-page");
+                    }
                 }
             });
         }

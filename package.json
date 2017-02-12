@@ -1,6 +1,6 @@
 {
     "name": "server-static",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "preferGlobal": true,
     "description": "a static file server",
     "scripts": {
@@ -12,7 +12,9 @@
         "static",
         "file",
         "server",
-        "hot-reolad"
+        "hot-reolad",
+        "cli",
+        "mock"
     ],
     "homepage": "https://github.com/rwson/parse-directorys",
     "repository": {
