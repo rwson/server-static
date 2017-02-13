@@ -58,9 +58,14 @@ var app = connect(),
         port: 3000,
         "auto-refresh": true,
         watches: dir,
-        ignores: "",
+        ignores: [],
         routers: []
     },
+    ignores = [
+        "node_modules",
+        "jspm_packages",
+        "bower_components"
+    ],
     injectScript = inject({
         code: `
             <!--injected by static-server-->
@@ -117,10 +122,16 @@ try {
 
         if (typeof outConfig.ignores === "string" && outConfig.ignores.length) {
             outConfig.ignores = path.join(dir, outConfig.ignores);
+            if (ignores.indexOf(outConfig.ignores) === -1) {
+                ignores = ignores.push(outConfig.ignores);
+            }
+            outConfig.ignores = ignores;
         } else if (Array.isArray(outConfig.ignores)) {
-            outConfig.ignores = outConfig.ignores.map(function (src) {
-                return path.join(dir, src);
-            });
+            outConfig.ignores = outConfig.ignores.filter(function(src) {
+                return ignores.indexOf(src) === -1;
+            }).concat(ignores);
+        } else {
+            outConfig.ignores = ignores;
         }
 
         if (Array.isArray(outConfig.routers) && outConfig.routers.length) {
@@ -139,17 +150,15 @@ try {
     }
     cfg = merge(cfg, outConfig);
 } catch (e) {
-    console.log(e && e.code !== "MODULE_NOT_FOUND");
     if (e && e.code !== "MODULE_NOT_FOUND") {
         throw e;
+    } else {
+        cfg.ignores = ignores;
     }
 }
 
 //  检测端口是否可用
 detect(cfg.port, function (ex, _port) {
-    if (ex) {
-        console.log(ex);
-    }
     if (cfg.port === _port) {
         colorConsole.green(`将监听端口: ${_port}`);
     } else {
@@ -228,8 +237,16 @@ function statrServer(cfg) {
     io.on("connect", function (socket) {
         colorConsole.green("websocket握手成功, 将监视文件变化...");
         socket.emit("success");
-        if (cfg.watches) {
-            watch(cfg.watches).on("change", function (file) {
+
+        if (cfg.watches.length) {
+            watch(cfg.watches, { 
+                recursive: false,
+                filter: function(filename) {
+                    return cfg.ignores.every(function(name) {
+                        return filename.indexOf(name) === -1;
+                    });
+                }
+            }).on("change", function (file) {
                 if (cfg["auto-refresh"]) {
                     if (/\.css$/.test(file)) {
                         colorConsole.green(`${file}发生变化, 刷新样式...`);
