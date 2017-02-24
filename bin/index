@@ -8,6 +8,7 @@ var fs = require("fs"),
     open = require("open"),
     detect = require("detect-port"),
     connect = require("connect"),
+    log4js = require("log4js"),
     connectRouter = require("connect-route"),
     bodyParser = require("body-parser"),
     serveStatic = require("serve-static"),
@@ -15,6 +16,7 @@ var fs = require("fs"),
     inject = require("inject-html"),
     argv = require("minimist")(process.argv.slice(2)),
     dir = process.cwd(),
+    logger = log4js.getLogger(),
     cfgFile = path.join(dir, "static-server.config.js");
 
 require("console.table");
@@ -160,9 +162,9 @@ try {
 //  检测端口是否可用
 detect(cfg.port, function (ex, _port) {
     if (cfg.port === _port) {
-        colorConsole.green(`将监听端口: ${_port}`);
+        logger.info(`将监听端口: ${_port}`);
     } else {
-        colorConsole.green(`端口${cfg.port}被占用,将监听端口: ${_port}`);
+        logger.warn(`端口${cfg.port}被占用,将监听端口: ${_port}`);
         cfg.port = _port;
     }
 
@@ -228,36 +230,36 @@ function statrServer(cfg) {
 
     //  监听相关端口启动服务
     server = http.createServer(app).listen(cfg.port, function (req, res) {
-        colorConsole.green(`服务启动成功, 访问地址为: ${url}`);
-        colorConsole.green("正在打开浏览器....");
+        logger.info(`服务启动成功, 访问地址为: ${url}`);
+        logger.info("正在打开浏览器....");
         open(url);
     });
 
     io = socket.listen(server);
     io.on("connect", function (socket) {
-        colorConsole.green("websocket握手成功, 将监视文件变化...");
+        logger.info("websocket握手成功, 将监视文件变化...");
         socket.emit("success");
 
-        if (cfg.watches.length) {
-            watch(cfg.watches, { 
-                recursive: false,
-                filter: function(filename) {
-                    return cfg.ignores.every(function(name) {
-                        return filename.indexOf(name) === -1;
-                    });
+        watch(cfg.watches, {
+            recursive: true,
+            followSymLinks: true,
+            maxSymLevel: 6,
+            filter: function(filename) {
+                return cfg.ignores.every(function(name) {
+                    return filename.indexOf(name) === -1;
+                });
+            }
+        }).on("change", function (file) {
+            if (cfg["auto-refresh"]) {
+                if (/\.css$/.test(file)) {
+                    logger.info(`${file}发生变化, 刷新样式...`);
+                    io.emit("refresh-css");
+                } else {
+                    logger.info(`${file}发生变化, 刷新页面...`);
+                    io.emit("refresh-page");
                 }
-            }).on("change", function (file) {
-                if (cfg["auto-refresh"]) {
-                    if (/\.css$/.test(file)) {
-                        colorConsole.green(`${file}发生变化, 刷新样式...`);
-                        io.emit("refresh-css");
-                    } else {
-                        colorConsole.green(`${file}发生变化, 刷新页面...`);
-                        io.emit("refresh-page");
-                    }
-                }
-            });
-        }
+            }
+        });
     });
 }
 
