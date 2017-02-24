@@ -113,7 +113,7 @@ if (argv.help) {
 //  读取配置文件
 try {
     outConfig = require(cfgFile);
-    if (outConfig.watches.length) {
+    if (outConfig.watches && outConfig.watches.length) {
         if (typeof outConfig.watches === "string" && outConfig.watches.length) {
             outConfig.watches = path.join(dir, outConfig.watch);
         } else if (Array.isArray(outConfig.watches)) {
