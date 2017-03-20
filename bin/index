@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+
 var fs = require("fs"),
     path = require("path"),
     http = require("http"),
     colorConsole = require("color-console"),
     minimist = require("minimist"),
-    watch = require("node-watch"),
+    chokidar = require("chokidar"),
     open = require("open"),
     detect = require("detect-port"),
     connect = require("connect"),
@@ -33,20 +34,10 @@ var helps = [{
     defaultVal: 3000,
     mean: "将要启动的端口"
 }, {
-    name: "auto-refresh",
-    valueType: "Boolean",
-    defaultVal: true,
-    mean: "是否开启自动刷新"
-}, {
     name: "watches",
     valueType: "Array/String",
     defaultVal: "当前目录",
     mean: "如开启了自动刷新,文件发生变化后将自动刷新页面"
-}, {
-    name: "ignores",
-    valueType: "Array/String",
-    defaultVal: '""',
-    mean: "忽略目录,一般为node_modules或者jspm_packages之类的第三方包"
 }, {
     name: "routers",
     valueType: "Array.<Object>",
@@ -58,16 +49,11 @@ var app = connect(),
     cfg = {
         entry: "index.html",
         port: 3000,
-        "auto-refresh": true,
         watches: dir,
-        ignores: [],
+        ignores: undefined,
         routers: []
     },
-    ignores = [
-        "node_modules",
-        "jspm_packages",
-        "bower_components"
-    ],
+    ignores = /node_modules|jspm_packages|bower_components|^\.[\S\s]+/,
     injectScript = inject({
         code: `
             <!--injected by static-server-->
@@ -117,23 +103,9 @@ try {
         if (typeof outConfig.watches === "string" && outConfig.watches.length) {
             outConfig.watches = path.join(dir, outConfig.watch);
         } else if (Array.isArray(outConfig.watches)) {
-            outConfig.watches = outConfig.watches.map(function (src) {
+            outConfig.watches = outConfig.watches.map(function(src) {
                 return path.join(dir, src);
             });
-        }
-
-        if (typeof outConfig.ignores === "string" && outConfig.ignores.length) {
-            outConfig.ignores = path.join(dir, outConfig.ignores);
-            if (ignores.indexOf(outConfig.ignores) === -1) {
-                ignores = ignores.push(outConfig.ignores);
-            }
-            outConfig.ignores = ignores;
-        } else if (Array.isArray(outConfig.ignores)) {
-            outConfig.ignores = outConfig.ignores.filter(function(src) {
-                return ignores.indexOf(src) === -1;
-            }).concat(ignores);
-        } else {
-            outConfig.ignores = ignores;
         }
 
         if (Array.isArray(outConfig.routers) && outConfig.routers.length) {
@@ -158,8 +130,10 @@ try {
     }
 }
 
+cfg.ignores = ignores;
+
 //  检测端口是否可用
-detect(cfg.port, function (ex, _port) {
+detect(cfg.port, function(ex, _port) {
     if (cfg.port === _port) {
         logger.info(`将监听端口: ${_port}`);
     } else {
@@ -178,91 +152,112 @@ detect(cfg.port, function (ex, _port) {
 function statrServer(cfg) {
     var url = `http://127.0.0.1:${cfg.port}`,
         pathInfo, htmlStream, server, io;
-    app.use(function (req, res, next) {
-        res.setHeader("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        res.setHeader("Allow", "GET,PUT,POST,DELETE");
-        res.setHeader("charset", "utf-8");
+    app.use(function(req, res, next) {
+            res.setHeader("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
+            res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+            res.setHeader("Allow", "GET,PUT,POST,DELETE");
+            res.setHeader("charset", "utf-8");
 
-        pathInfo = req.url;
-        //  处理HTML格式的
-        if (pathInfo === "/" || /\.html?/.test(pathInfo)) {
-            //  处理"/"的情况
-            if (pathInfo === "/") {
-                pathInfo = cfg.entry;
-            }
-            try {
-                pathInfo = path.join(dir, pathInfo);
-                htmlStream = fs.readFileSync(pathInfo, {
-                    encoding: "utf8",
-                    flag: "r"
-                });
-                if (isFullyHtml(htmlStream)) {
-                    injectScript(req, res, function () {
-                        res.setHeader("Content-Type", "text/html; charset=utf-8");
-                        res.statusCode = 200;
-                        res.end(htmlStream);
+            pathInfo = req.url;
+            //  处理HTML格式的
+            if (pathInfo === "/" || /\.html?/.test(pathInfo)) {
+                //  处理"/"的情况
+                if (pathInfo === "/") {
+                    pathInfo = cfg.entry;
+                }
+                try {
+                    pathInfo = path.join(dir, pathInfo);
+                    htmlStream = fs.readFileSync(pathInfo, {
+                        encoding: "utf8",
+                        flag: "r"
                     });
-                } else {
+                    if (isFullyHtml(htmlStream)) {
+                        injectScript(req, res, function() {
+                            res.setHeader("Content-Type", "text/html; charset=utf-8");
+                            res.statusCode = 200;
+                            res.end(htmlStream);
+                        });
+                    } else {
+                        next();
+                    }
+                } catch (e) {
                     next();
                 }
-            } catch (e) {
+            } else {
                 next();
             }
-        } else {
-            next();
-        }
-    })
+        })
         .use(bodyParser.urlencoded({
             extended: false
         }))
         .use(serveStatic(dir, {
             "index": ["index.html"]
         }))
-        .use(connectRouter(function (route) {
+        .use(connectRouter(function(route) {
             if (cfg.routers.length) {
-                cfg.routers.forEach(function (routerItem) {
+                cfg.routers.forEach(function(routerItem) {
                     route[routerItem.method.toLowerCase()](routerItem.url, routerItem.handler);
                 });
             }
         }));
 
     //  监听相关端口启动服务
-    server = http.createServer(app).listen(cfg.port, function (req, res) {
-        logger.info(`服务启动成功, 访问地址为: ${url}`);
-        logger.info("正在打开浏览器....");
+    server = http.createServer(app).listen(cfg.port, function(req, res) {
+        logger.info(`服务启动成功, 访问地址为: ${url}, 正在打开浏览器...`);
         open(url);
     });
-
     io = socket.listen(server);
-    io.on("connect", function (socket) {
-        logger.info("websocket握手成功, 将监视文件变化...");
-        
-        try {
-            watch(cfg.watches, {
-                recursive: true,
-                followSymLinks: true,
-                maxSymLevel: 6,
-                filter: function(filename) {
-                    return cfg.ignores.every(function(name) {
-                        return filename.indexOf(name) === -1;
-                    });
-                }
-            }).on("change", function (file) {
-                if (cfg["auto-refresh"]) {
-                    if (/\.css$/.test(file)) {
-                        logger.info(`${file}发生变化, 刷新样式...`);
-                        io.emit("refresh-css");
-                    } else {
-                        logger.info(`${file}发生变化, 刷新页面...`);
-                        io.emit("refresh-page");
-                    }
-                }
+    io.on("connect", function(socket) {
+        chokidar.watch(cfg.watches, {
+                persistent: true,
+                ignored: cfg.ignores,
+                ignoreInitial: false,
+                followSymlinks: true,
+                alwaysStat: false,
+                depth: 99,
+                awaitWriteFinish: {
+                    stabilityThreshold: 2000,
+                    pollInterval: 500
+                },
+                ignorePermissionErrors: false,
+                atomic: true
+            }).on("change", (file) => {
+                handleChange(cfg, file, io);
+            })
+            .on("add", (file) => {
+                handleChange(cfg, file, io);
+            })
+            .on("unlink", (file) => {
+                handleChange(cfg, file, io);
+            })
+            .on("addDir", (file) => {
+                handleChange(cfg, file, io);
+            })
+            .on("unlinkDir", (file) => {
+                handleChange(cfg, file, io);
+            })
+            .on("ready", function() {
+                logger.info("websocket握手成功, 将监视文件变化...");
             });
-        } catch (e) {
-
-        }
     });
+}
+
+/**
+ * 文件发生变化回调
+ * @param    {Object}   cfg
+ * @param    {String}   file
+ * @param    {Object}   io
+ */
+function handleChange(cfg, file, io) {
+    if (cfg["auto-refresh"]) {
+        if (/\.css$/.test(file)) {
+            logger.info(`${file}发生变化, 刷新样式...`);
+            io.emit("refresh-css");
+        } else {
+            logger.info(`${file}发生变化, 刷新页面...`);
+            io.emit("refresh-page");
+        }
+    }
 }
 
 /**
@@ -291,5 +286,5 @@ function isFullyHtml(str) {
     return (/^\<\!doctype/i).test(str) &&
         (/<html\b[^>]*>/gi).test(str) && (/<\/html\b[^>]*>/gi).test(str) &&
         ((/<head\b[^>]*>/gi).test(str) && (/<\/head\b[^>]*>/gi).test(str) ||
-        (/<body\b[^>]*>/gi).test(str) && (/<\/body\b[^>]*>/gi).test(str));
+            (/<body\b[^>]*>/gi).test(str) && (/<\/body\b[^>]*>/gi).test(str));
 }

@@ -23,6 +23,7 @@
   "author": "rwson",
   "dependencies": {
     "body-parser": "^1.16.0",
+    "chokidar": "^1.6.1",
     "color-console": "0.0.1",
     "connect": "^3.5.0",
     "connect-route": "^0.1.5",
@@ -31,7 +32,6 @@
     "inject-html": "^1.0.1",
     "log4js": "^1.1.0",
     "minimist": "^1.2.0",
-    "node-watch": "^0.4.1",
     "open": "0.0.5",
     "serve-static": "^1.11.2",
     "socket.io": "^1.7.2"
