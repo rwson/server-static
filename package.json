@@ -1,11 +1,11 @@
 {
   "name": "server-static",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "preferGlobal": true,
   "description": "a static file server",
   "scripts": {},
   "bin": {
-    "static-server": "./bin/index"
+    "static-server": "./lib/index.js"
   },
   "keywords": [
     "static",

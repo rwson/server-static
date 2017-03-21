@@ -27,17 +27,11 @@
 
     module.exports = {
     	port: 4000,             //  监听端口,默认3000,当端口被占用时随机
-    	"auto-refresh": true,   //  文件发生变化时自动刷新
     	entry: "index.html",    //  首页文件,及当路径为"/"时响应的页面
-    	watches: [              //  观察(文件/目录)数组,支持字符串或字符串数组,当为字符串时,只监听一个,文件发生变化,自动刷新页面
-    		"lib",
-    		"name",
-    		"./index.html"
-    	],
-    	ignores: [              //  忽略数组,和watches传值类型一致,功能相反
-    		"node_modules",
-    		"jspm_packages",
-    		"bower_components"
+    	ignores: [              //  忽略过滤器(可传入单个函数或者由函数组成的数组)
+    		function(file) {
+    		    return /node_modules/.test(file);
+    		}
     	],
     	routers: [              //  自定义请求路由
     		{
@@ -78,5 +72,4 @@
 - 可以通过自己写一些简单的处理逻辑来检查参数是否传对等
 
 - 市面上大多数静态文件服务器不支持自定义路由的功能,mock数据也相对较麻烦
-
 
