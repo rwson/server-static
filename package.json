@@ -1,6 +1,6 @@
 {
   "name": "server-static",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "preferGlobal": true,
   "description": "a static file server",
   "scripts": {},
@@ -29,6 +29,7 @@
     "connect-route": "^0.1.5",
     "console.table": "^0.8.0",
     "detect-port": "^1.1.0",
+    "http-proxy-middleware": "^0.17.4",
     "inject-html": "^1.0.1",
     "log4js": "^1.1.0",
     "minimist": "^1.2.0",

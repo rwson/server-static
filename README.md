@@ -1,6 +1,6 @@
 # static-server
 
-静态文件服务器,支持SPA,类似于[live-server](https://github.com/tapio/live-server),支持自定义ajax请求路径mock数据
+静态文件服务器,支持SPA,类似于[live-server](https://github.com/tapio/live-server),支持自定义ajax请求路径mock数据,支持模拟ajax跨域请求进行接口调试
 
 ### 安装
 
