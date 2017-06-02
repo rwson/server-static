@@ -110,7 +110,7 @@ module.exports = {
 };
 ```
 
-在所有接口都需要跨域请求时,可以将`static-server.config.js`中的routers指定成一个对象，为如下结构即可支持全部跨域调试，更加方便调试
+在所有接口都需要跨域请求时,可以将`static-server.config.js`中的routers指定成一个对象，为如下结构即可支持全部接口跨域调试
 
 ```javascript
 //  static-server.config.js
