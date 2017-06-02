@@ -59,7 +59,7 @@ static-server
 
 ### 配置(如不指定,就用默认配置)
 
-可以通过在项目根目录下新建名为"static-server.config.js"的文件进行配置
+可以通过在项目根目录下新建名为`static-server.config.js`的文件进行配置
 
 
 
@@ -108,5 +108,22 @@ module.exports = {
 		}
 	]
 };
+```
+
+在所有接口都需要跨域请求时,可以将`static-server.config.js`中的routers指定成一个对象，为如下结构即可支持全部跨域调试，更加方便调试
+
+```javascript
+//  static-server.config.js
+module.exports = {
+	//	...
+    routers: {
+        url: "*",
+        method: "*",
+        cross: true
+    }
+	//	...
+};
+
+
 ```
 
